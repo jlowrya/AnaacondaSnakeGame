@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Snake Game</title>
+</head>
+<style>
+    .grid-container {
+        align-items: center;
+        display: grid;
+        grid-template-columns: repeat(10, 50px);
+        grid-template-rows: auto;
+        background-color: black;
+        border-style: solid;
+        width:500px;
+        column-gap: 1px;
+        row-gap: 1px;
+    }
+
+    .grid-item {
+        background-color: white;
+        border: black;
+        height: 50px;
+        width: 50px;
+        justify-self: center;
+    }
+
+    .snake {
+        background-color: green;
+    }
+</style>
+<body>
+    <h1>Welcome to Snake Game!</h1>
+    <div id="grid" class="grid-container">
+    </div>
+
+    <script>
+        const numColumns = 10;
+        const numRows = 10;
+
+        const startBox = 0;
+
+        const grid = document.getElementById("grid");
+
+        function makeSnake(e){
+            e.target.classList.add("snake");
+        }
+
+
+        for(let i=0; i<numColumns*numRows;i++){
+            let box = document.createElement("div");
+            // box.textContent = `box ${i+1}`;
+            box.id = `${i}`;
+            box.classList.add('grid-item');
+            box.addEventListener("click", makeSnake)
+            grid.append(box);
+        }
+    </script>
+</body>
+</html>
