@@ -50,20 +50,38 @@
             e.target.classList.add("snake");
         }
 
-        function move(){
-            const oldPosition = document.querySelector("div.snake");
-            if(moveDirection=='right'){
-                oldPosition.classList.remove('snake');
-                let newPositionId = parseInt(oldPosition.id)+1;
-                if(newPositionId===numColumns*numRows){
-                    oldPosition.classList.add('dead');
-                    clearInterval(1);
+        function getNextCellId(oldPositionId, direction){
+            switch(direction){
+                case "right":
+                    console.log("Getting next id for direction ", direction);
+                    return oldPositionId+1;
+                case "left":
+                    console.log("Getting next id for direction ", direction);
+                    return oldPositionId-1;
+                case "up":
+                    console.log("Getting next id for direction ", direction);
+                    return oldPositionId-numRows;
+                case "down":
+                    console.log("Getting next id for direction ", direction);
+                    return oldPositionId+numRows;
+            }
+        }
 
-                } else {
-                    let newPosition = document.getElementById(newPositionId);
-                    newPosition.classList.add("snake");
-                };
-                
+        function isOutOfBounds(newPositionId, direction){
+            return newPositionId<0 || newPositionId>=numColumns*numRows || (direction==="right" && newPositionId%numColumns===0) || (direction==="left" && newPositionId%numColumns===(numColumns-1));
+        }
+
+        function move(direction){
+            const oldPosition = document.querySelector("div.snake");
+            oldPosition.classList.remove('snake');
+            let newPositionId = getNextCellId(parseInt(oldPosition.id), direction);
+            console.log('Moving from position ', oldPosition.id, ' to ', newPositionId);
+            let newPosition = document.getElementById(newPositionId);
+            if(isOutOfBounds(newPositionId, direction)){
+                oldPosition.classList.add('dead');
+            }
+            else{
+                newPosition.classList.add("snake");
             }
         }
 
@@ -72,17 +90,29 @@
             let box = document.createElement("div");
             box.id = `${i}`;
             box.classList.add('grid-item');
-            box.addEventListener("click", move)
             grid.append(box);
         }
 
         let snake = document.getElementById(startBox);
         snake.classList.add("snake");
-        let intervalId = setInterval(move, 100);
-        console.log('Interval id: ', intervalId);
-        // document.onkeydown = function(e){
-        //     console.log('The ', e.key, ' key was pressed');
-        // }
+        // let intervalId = setInterval(move, 100);
+        // console.log('Interval id: ', intervalId);
+        document.onkeydown = function(e){
+            switch(e.key){
+                case "ArrowUp":
+                    move("up");
+                    break;
+                case "ArrowDown":
+                    move("down");
+                    break;
+                case "ArrowLeft":
+                    move("left");
+                    break;
+                case "ArrowRight":
+                    move("right");
+                    break;
+            }
+        }
 
 
 
