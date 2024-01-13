@@ -27,6 +27,10 @@
     .snake {
         background-color: green;
     }
+
+    .dead {
+        background-color: red;
+    }
 </style>
 <body>
     <h1>Welcome to Snake Game!</h1>
@@ -38,6 +42,7 @@
         const numRows = 10;
 
         const startBox = 0;
+        const moveDirection = 'right'
 
         const grid = document.getElementById("grid");
 
@@ -45,15 +50,42 @@
             e.target.classList.add("snake");
         }
 
+        function move(){
+            const oldPosition = document.querySelector("div.snake");
+            if(moveDirection=='right'){
+                oldPosition.classList.remove('snake');
+                let newPositionId = parseInt(oldPosition.id)+1;
+                if(newPositionId===numColumns*numRows){
+                    oldPosition.classList.add('dead');
+                    clearInterval(1);
+
+                } else {
+                    let newPosition = document.getElementById(newPositionId);
+                    newPosition.classList.add("snake");
+                };
+                
+            }
+        }
+
 
         for(let i=0; i<numColumns*numRows;i++){
             let box = document.createElement("div");
-            // box.textContent = `box ${i+1}`;
             box.id = `${i}`;
             box.classList.add('grid-item');
-            box.addEventListener("click", makeSnake)
+            box.addEventListener("click", move)
             grid.append(box);
         }
+
+        let snake = document.getElementById(startBox);
+        snake.classList.add("snake");
+        let intervalId = setInterval(move, 100);
+        console.log('Interval id: ', intervalId);
+        // document.onkeydown = function(e){
+        //     console.log('The ', e.key, ' key was pressed');
+        // }
+
+
+
     </script>
 </body>
 </html>
