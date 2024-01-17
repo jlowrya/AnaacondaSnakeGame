@@ -106,16 +106,16 @@
         document.onkeydown = function(e){
             switch(e.key){
                 case "ArrowUp":
-                    snake.move("up");
+                    snake.setDirection("up");
                     break;
                 case "ArrowDown":
-                    snake.move("down");
+                    snake.setDirection("down");
                     break;
                 case "ArrowLeft":
-                    snake.move("left");
+                    snake.setDirection("left");
                     break; 
                 case "ArrowRight":
-                    snake.move("right");
+                    snake.setDirection("right");
                     break;
             }
         }
@@ -133,8 +133,13 @@
                 this.head = head;
                 this.tail = head;
 
+                this.direction = "right";
+
                 const position = document.getElementById(this.head.value)
                 position.classList.add("snake")
+
+                console.log('Head during initialization ', this.head)
+                console.log('Tail during initialization ', this.tail)
             }
 
             //TODO: add prevNode logic
@@ -183,14 +188,21 @@
                 return toRemove.value;
             };
 
+            setDirection(direction){
+                this.direction = direction;
+            }
+
             move(direction){
+                if(!direction){
+                    direction = this.direction;
+                }
 
                 console.log('Head ', this.head)
                 console.log('Tail ', this.tail)
-                const newPositionId = getNextCellId(parseInt(this.head.value), direction);
+                const newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
                 
 
-                if(isOutOfBounds(newPositionId, direction)){
+                if(isOutOfBounds(newPositionId, this.direction)){
                     console.warn('Attempting illegal move')
                     let node = this.head;
                     console.debug(node)
@@ -200,6 +212,7 @@
                         cell.classList.add('dead')
                         node = node.next;
                     }
+                    clearInterval(1);
                 }
                 else{
                     const newPosition = document.getElementById(newPositionId);
@@ -215,7 +228,7 @@
                         ateBun = true;
                         newPosition.classList.remove('bun')
                     }
-                    
+
                     this.prepend(newPositionId);
                     newPosition.classList.add("snake");
 
@@ -231,6 +244,8 @@
         const snake = new Snake(initialNode)
 
         addBunToBoard();
+
+        setInterval(()=>snake.move(), 500)
 
 
 
