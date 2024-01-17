@@ -281,6 +281,7 @@
                     console.warn('You cannot move back on yourself')
                     this.direction = getOppositeDirection(this.direction);
                     newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
+                    newPosition = document.getElementById(newPositionId);
                 }
 
                 if(isOutOfBounds(newPositionId, this.direction) || newPosition.classList.contains('snake')){
