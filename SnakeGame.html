@@ -35,6 +35,10 @@
     .head {
         background-color: orange;
     }
+
+    .bun {
+        background-color: burlywood;
+    }
 </style>
 <body>
     <h1>Welcome to Snake Game!</h1>
@@ -73,6 +77,22 @@
 
         function isOutOfBounds(newPositionId, direction){
             return newPositionId<0 || newPositionId>=numColumns*numRows || (direction==="right" && newPositionId%numColumns===0) || (direction==="left" && newPositionId%numColumns===(numColumns-1));
+        }
+
+
+        function addBunToBoard(){
+            let randomPosition = Math.floor(Math.random()*numColumns*numRows);
+            console.log('Trying to put bun in position ', randomPosition);
+            let positionDiv = document.getElementById(randomPosition);
+
+            while(positionDiv.classList.contains('snake')){
+                console.log('Position ', randomPosition, ' is occupied by the snake, recalculating...');
+                randomPosition = Math.floor(Math.random()*numColumns*numRows);
+                console.log('Trying to put bun in position ', randomPosition);
+                positionDiv = document.getElementById(randomPosition);
+            }
+
+            positionDiv.classList.add('bun');
         }
 
 
@@ -182,14 +202,26 @@
                     }
                 }
                 else{
-                    const locationToRemove = this.pop()
-                    console.log('Removing location ', locationToRemove)
-                    const oldPosition = document.getElementById(locationToRemove)
-                    oldPosition.classList.remove('snake');
-
-                    this.prepend(newPositionId);
                     const newPosition = document.getElementById(newPositionId);
+                    let ateBun = false;
+                    //if the snake eats a bun it increases its size, so leave the last element untouched
+                    if(!newPosition.classList.contains('bun')){
+                        const locationToRemove = this.pop()
+                        console.log('Removing location ', locationToRemove)
+                        const oldPosition = document.getElementById(locationToRemove)
+                        oldPosition.classList.remove('snake');
+                    }
+                    else{
+                        ateBun = true;
+                        newPosition.classList.remove('bun')
+                    }
+                    
+                    this.prepend(newPositionId);
                     newPosition.classList.add("snake");
+
+                    if (ateBun){
+                        addBunToBoard();
+                    }
                 }
             }
 
@@ -197,9 +229,8 @@
 
         const initialNode = new SnakeNode(startBox, null, null)
         const snake = new Snake(initialNode)
-        snake.prepend(1)
-        snake.prepend(2)
-        snake.prepend(3)
+
+        addBunToBoard();
 
 
 
