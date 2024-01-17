@@ -4,16 +4,22 @@
     <title>My Snake Game</title>
 </head>
 <style>
+    body {
+        text-align: center;
+    }
     .grid-container {
         align-items: center;
         display: grid;
         grid-template-columns: repeat(10, 50px);
         grid-template-rows: auto;
         background-color: black;
-        border-style: solid;
+        /* border-style: solid; */
         width:508px;
         column-gap: 1px;
         row-gap: 1px;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
     }
 
     .grid-item {
@@ -39,20 +45,36 @@
     .bun {
         background-color: burlywood;
     }
+
+    .hidden {
+            display: none;
+            visibility: hidden;
+    }
 </style>
 <body>
-    <h1>Welcome to Snake Game!</h1>
+    <h1>Welcome to Snake-a-Conda Bun Hunter!</h1>
+    <button id="start">Start Game</button>
+    <br/>
     <div id="grid" class="grid-container">
     </div>
+    <br/>
+    <div id="score" class="hidden"></div>
+    <button id="restart" class="hidden">Restart</button>
 
     <script>
+        let gameInProgress = false;
+        let numGamesPlayed = 1;
+        const startButton = document.getElementById('start');
+
         const numColumns = 10;
         const numRows = 10;
 
         const startBox = 0;
-        const moveDirection = 'right'
+        const moveDirection = 'right';
 
-        const grid = document.getElementById("grid");
+        let score = 1;
+
+     
 
         function makeSnake(e){
             e.target.classList.add("snake");
@@ -106,14 +128,6 @@
             }
 
             positionDiv.classList.add('bun');
-        }
-
-
-        for(let i=0; i<numColumns*numRows;i++){
-            let box = document.createElement("div");
-            box.id = `${i}`;
-            box.classList.add('grid-item');
-            grid.append(box);
         }        
 
         document.onkeydown = function(e){
@@ -131,6 +145,25 @@
                     snake.setDirection("right");
                     break;
             }
+        }
+
+        function resetGame(snake){
+            //clear the board of all classes
+            let divsToClear = document.querySelectorAll('.snake, .dead, .bun');
+            for(let div of divsToClear){
+                div.classList = 'grid-item';
+            }
+            
+            snake.reset();
+
+            addBunToBoard();
+            score = 1;
+            const scoreDiv = document.getElementById('score');
+            scoreDiv.textContent =`Score: ${score}`;
+
+            const newIntervalId = setInterval(()=>snake.move(), 300);
+
+            console.log('New interval id ', newIntervalId)
         }
 
         class SnakeNode {
@@ -209,11 +242,29 @@
                     cell.classList.add('dead')
                     node = node.next;
                 }
-                clearInterval(1);
+                clearInterval(numGamesPlayed);
+                numGamesPlayed+=1;
             }
 
             setDirection(direction){
                 this.direction = direction;
+            }
+
+            clear(){
+                this.head = null;
+                this.tail = null;
+            }
+
+            reset(){
+                this.clear();
+                const newHead = new SnakeNode(startBox, null, null);
+                snake.head = newHead;
+                snake.tail = newHead
+
+                snake.direction = 'right';
+
+                const position = document.getElementById(this.head.value)
+                position.classList.add("snake")
             }
 
             move(direction){
@@ -249,6 +300,9 @@
                     else{
                         ateBun = true;
                         newPosition.classList.remove('bun')
+                        score+=1;
+                        const scoreDiv = document.getElementById('score');
+                        scoreDiv.textContent =`Score: ${score}`;
                     }
 
                     this.prepend(newPositionId);
@@ -263,14 +317,38 @@
         }
 
         const initialNode = new SnakeNode(startBox, null, null)
-        const snake = new Snake(initialNode)
+        let snake = null;
+
+        
+        startButton.addEventListener("click", ()=>{
+            const grid = document.getElementById("grid");
+            gameInProgress = true;
+
+            for(let i=0; i<numColumns*numRows;i++){
+            let box = document.createElement("div");
+            box.id = `${i}`;
+            box.classList.add('grid-item');
+            grid.append(box);
+
+            startButton.classList.add('hidden');
+        }
+
+        const resetButton = document.getElementById('restart');
+        resetButton.classList.remove('hidden');
+
+        const scoreDiv = document.getElementById('score');
+        scoreDiv.classList.remove('hidden');
+        scoreDiv.innerText = `Score: ${score}`;
+        
+        snake = new Snake(initialNode)
 
         addBunToBoard();
 
         setInterval(()=>snake.move(), 300)
+        })
 
-
-
+        const resetButton = document.getElementById('restart');
+        resetButton.addEventListener('click', () => resetGame(snake));
 
         
 
