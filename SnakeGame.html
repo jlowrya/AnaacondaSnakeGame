@@ -79,6 +79,19 @@
             return newPositionId<0 || newPositionId>=numColumns*numRows || (direction==="right" && newPositionId%numColumns===0) || (direction==="left" && newPositionId%numColumns===(numColumns-1));
         }
 
+        function getOppositeDirection(direction){
+            switch(direction){
+                case "up":
+                    return "down";
+                case "down":
+                    return "up";
+                case "left":
+                    return "right";
+                case "right":
+                    return "left";
+            }
+        }
+
 
         function addBunToBoard(){
             let randomPosition = Math.floor(Math.random()*numColumns*numRows);
@@ -188,6 +201,17 @@
                 return toRemove.value;
             };
 
+            fail(){
+                let node = this.head;
+                while(node){
+                    let cell = document.getElementById(node.value);
+                    cell.classList.remove('snake');
+                    cell.classList.add('dead')
+                    node = node.next;
+                }
+                clearInterval(1);
+            }
+
             setDirection(direction){
                 this.direction = direction;
             }
@@ -199,20 +223,18 @@
 
                 console.log('Head ', this.head)
                 console.log('Tail ', this.tail)
-                const newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
-                
+                let newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
+                let newPosition = document.getElementById(newPositionId);
+                //don't allow the snake to go back on itself
+                if (this.head.next && newPositionId===this.head.next.value){
+                    console.warn('You cannot move back on yourself')
+                    this.direction = getOppositeDirection(this.direction);
+                    newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
+                }
 
-                if(isOutOfBounds(newPositionId, this.direction)){
+                if(isOutOfBounds(newPositionId, this.direction) || newPosition.classList.contains('snake')){
                     console.warn('Attempting illegal move')
-                    let node = this.head;
-                    console.debug(node)
-                    while(node){
-                        let cell = document.getElementById(node.value);
-                        cell.classList.remove('snake');
-                        cell.classList.add('dead')
-                        node = node.next;
-                    }
-                    clearInterval(1);
+                    this.fail();
                 }
                 else{
                     const newPosition = document.getElementById(newPositionId);
@@ -245,7 +267,7 @@
 
         addBunToBoard();
 
-        setInterval(()=>snake.move(), 500)
+        setInterval(()=>snake.move(), 300)
 
 
 
