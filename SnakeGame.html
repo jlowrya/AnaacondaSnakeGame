@@ -166,7 +166,20 @@
             }
 
             positionDiv.classList.add('bun');
-        }        
+        }
+        
+        function oppositeWallPosition(cellId, direction){
+            switch(direction){
+                case "up":
+                    return Math.abs(cellId+numColumns*numRows);
+                case "down":
+                    return cellId-numRows*numColumns;
+                case "left":
+                    return cellId+numColumns;
+                case "right":
+                    return cellId-numColumns;
+            }
+        }
 
         document.onkeydown = function(e){
             switch(e.key){
@@ -232,12 +245,18 @@
                 this.bunsEaten = 0;
 
                 this.direction = "right";
+                this.isAnaconda = true;
 
                 const position = document.getElementById(this.head.value)
                 position.classList.add("snake")
 
                 console.log('Head during initialization ', this.head)
                 console.log('Tail during initialization ', this.tail)
+            }
+
+            makeAnaconda(){
+                this.isAnaconda = true;
+                
             }
 
             append(value){
@@ -319,6 +338,15 @@
                 position.classList.add("snake")
             }
 
+            eatSelf(positionId){
+                let lastRemoved = this.pop()
+                while(lastRemoved!=positionId){
+                    removeItemAtPosition(lastRemoved);
+                    lastRemoved = this.pop();
+                }
+                removeItemAtPosition(lastRemoved);
+            }
+
             move(direction){
                 if(!direction){
                     direction = this.direction;
@@ -335,8 +363,25 @@
                 }
 
                 if(isOutOfBounds(newPositionId, this.direction) || newPosition.classList.contains('snake')){
-                    console.warn('Attempting illegal move')
-                    this.fail();
+                    if(this.isAnaconda){
+                        //if it's an anaconda, allow to pass through wall and continue to opposite side
+                        if(isOutOfBounds(newPositionId, this.direction)){
+                            console.log('Out of bounds while anaconda')
+                            newPositionId = oppositeWallPosition(newPositionId, this.direction);
+                            console.log('New pos id on opposite wall is ', newPositionId);
+                        }
+                        // if(spaceIsOccupied(newPositionId)==='snake'){
+                        //     this.eatSelf(newPositionId);
+                        // }
+                        removeItemAtPosition(this.pop());
+                        this.prepend(newPositionId);
+                        addItemToBoard('snake', newPositionId);
+                    }
+                    else{
+                        console.warn('Attempting illegal move')
+                        this.fail();
+                    }
+                    
                 }
                 else{
                     let shouldRemoveSnakePiece = true;
