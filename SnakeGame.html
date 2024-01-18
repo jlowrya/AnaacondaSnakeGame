@@ -38,8 +38,8 @@
         background-color: red;
     }
 
-    .head {
-        background-color: orange;
+    .mouse {
+        background-color: grey;
     }
 
     .bun {
@@ -52,13 +52,17 @@
     }
 </style>
 <body>
+    <audio id="audio">
+        <source src="audio/anaconda.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
     <h1>Welcome to Snake-a-Conda Bun Hunter!</h1>
     <button id="start">Start Game</button>
     <br/>
     <div id="grid" class="grid-container">
     </div>
     <br/>
-    <div id="score" class="hidden"></div>
+    <div id="score" class="hidden"></div><div id="bunCount" class="hidden"></div>
     <button id="restart" class="hidden">Restart</button>
 
     <script>
@@ -72,7 +76,18 @@
         const startBox = 0;
         const moveDirection = 'right';
 
+        let segmentEnd = 1.5;
+
         let score = 1;
+
+        const audio = document.getElementById('audio');
+
+        // audio.addEventListener('timeupdate', ()=>{
+        //     if(audio.currentTime>=segmentEnd){
+        //         audio.pause();
+        //         audio.currentTime = 0;
+        //     }
+        // })
 
      
 
@@ -112,6 +127,29 @@
                 case "right":
                     return "left";
             }
+        }
+
+        function spaceIsOccupied(cellId){
+            return document.getElementById(cellId).classList.length>1 ? document.getElementById(cellId).classList[1] : null;
+        }
+
+        function addItemToBoard(itemToAdd, cellId){
+            document.getElementById(cellId).classList.add(itemToAdd);
+        }
+
+        function randomAddItemToBoard(itemToAdd){
+            let randomPosition = Math.floor(Math.random()*numColumns*numRows);
+
+            while(spaceIsOccupied(randomPosition)){
+                randomPosition = Math.floor(Math.random()*numColumns*numRows);
+            }
+
+            addItemToBoard(itemToAdd, randomPosition);
+        }
+
+        function removeItemAtPosition(cellId){
+            console.log('Removing location ', cellId)
+            document.getElementById(cellId).classList = document.getElementById(cellId).classList[0];
         }
 
 
@@ -156,15 +194,27 @@
             
             snake.reset();
 
-            addBunToBoard();
+            // addBunToBoard();
+            randomAddItemToBoard('bun');
             score = 1;
             const scoreDiv = document.getElementById('score');
             scoreDiv.textContent =`Score: ${score}`;
+
+            const bunDiv = document.getElementById('bunCount');
+            bunDiv.textContent =`Buns: ${snake.bunsEaten}`;
+            
+
 
             const newIntervalId = setInterval(()=>snake.move(), 300);
 
             console.log('New interval id ', newIntervalId)
         }
+
+        // function playSound(){
+        //     audio.currentTime = 0;
+        //     audio.play()
+        //     setInterval()
+        // }
 
         class SnakeNode {
             constructor(value, nextNode, prevNode){
@@ -179,6 +229,8 @@
                 this.head = head;
                 this.tail = head;
 
+                this.bunsEaten = 0;
+
                 this.direction = "right";
 
                 const position = document.getElementById(this.head.value)
@@ -188,7 +240,6 @@
                 console.log('Tail during initialization ', this.tail)
             }
 
-            //TODO: add prevNode logic
             append(value){
                 //adds node to the end of the list
                 prevTail = this.tail;
@@ -199,7 +250,6 @@
                 newPosition.classList.add("snake");
             };
             
-            //TODO: add prevNode logic
             prepend(value){
                 //add node to the beginning of the list
                 const prevHead = this.head;
@@ -239,11 +289,12 @@
                 while(node){
                     let cell = document.getElementById(node.value);
                     cell.classList.remove('snake');
-                    cell.classList.add('dead')
+                    cell.classList.add('dead');
                     node = node.next;
                 }
                 clearInterval(numGamesPlayed);
                 numGamesPlayed+=1;
+                // audio.pause()
             }
 
             setDirection(direction){
@@ -258,10 +309,11 @@
             reset(){
                 this.clear();
                 const newHead = new SnakeNode(startBox, null, null);
-                snake.head = newHead;
-                snake.tail = newHead
+                this.head = newHead;
+                this.tail = newHead
 
-                snake.direction = 'right';
+                this.direction = 'right';
+                this.bunsEaten = 0;
 
                 const position = document.getElementById(this.head.value)
                 position.classList.add("snake")
@@ -272,8 +324,6 @@
                     direction = this.direction;
                 }
 
-                console.log('Head ', this.head)
-                console.log('Tail ', this.tail)
                 let newPositionId = getNextCellId(parseInt(this.head.value), this.direction);
                 let newPosition = document.getElementById(newPositionId);
                 //don't allow the snake to go back on itself
@@ -289,29 +339,40 @@
                     this.fail();
                 }
                 else{
-                    const newPosition = document.getElementById(newPositionId);
-                    let ateBun = false;
-                    //if the snake eats a bun it increases its size, so leave the last element untouched
-                    if(!newPosition.classList.contains('bun')){
-                        const locationToRemove = this.pop()
-                        console.log('Removing location ', locationToRemove)
-                        const oldPosition = document.getElementById(locationToRemove)
-                        oldPosition.classList.remove('snake');
+                    let shouldRemoveSnakePiece = true;
+                    let thingToEat = spaceIsOccupied(newPositionId);
+                    console.log('Thing to eat is ', thingToEat)
+                    switch(thingToEat){
+                        case null:
+                            console.warn('Nothing to eat, breaking out swtich statement');
+                            break;
+                        case 'mouse':
+                            console.warn('In mouse switch case');
+                            score+=1;
+                            const scoreDiv = document.getElementById('score');
+                            scoreDiv.textContent =`Score: ${score}`;
+                            shouldRemoveSnakePiece = false;
+                            //    audio.play()
+                            randomAddItemToBoard('mouse');
+                            break;
+                        case 'bun':
+                            console.warn('In bun switch case');
+                            this.bunsEaten+=1;
+                            const bunDiv = document.getElementById('bunCount');
+                            bunDiv.textContent =`Buns: ${this.bunsEaten}`;
+                            randomAddItemToBoard('bun');
+                            break;
                     }
-                    else{
-                        ateBun = true;
-                        newPosition.classList.remove('bun')
-                        score+=1;
-                        const scoreDiv = document.getElementById('score');
-                        scoreDiv.textContent =`Score: ${score}`;
+
+                    removeItemAtPosition(newPositionId);
+
+                    //if the snake eats a bun it increases its size, so leave the last element untouched
+                    if(shouldRemoveSnakePiece){
+                        removeItemAtPosition(this.pop());
                     }
 
                     this.prepend(newPositionId);
-                    newPosition.classList.add("snake");
-
-                    if (ateBun){
-                        addBunToBoard();
-                    }
+                    addItemToBoard('snake', newPositionId);
                 }
             }
 
@@ -340,10 +401,18 @@
         const scoreDiv = document.getElementById('score');
         scoreDiv.classList.remove('hidden');
         scoreDiv.innerText = `Score: ${score}`;
+
+        
         
         snake = new Snake(initialNode)
 
-        addBunToBoard();
+        const bunDiv = document.getElementById('bunCount');
+        bunDiv.classList.remove('hidden');
+        bunDiv.innerText = `Buns: ${snake.bunsEaten}`;
+
+        // addBunToBoard();
+        randomAddItemToBoard('bun');
+        randomAddItemToBoard('mouse');
 
         setInterval(()=>snake.move(), 300)
         })
