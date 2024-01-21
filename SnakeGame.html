@@ -70,24 +70,63 @@
     <button id="restart" class="hidden">Restart</button>
 
     <script>
-        let gameInProgress = false;
-        let numGamesPlayed = 1;
-        const bunsNeededForAnaconda = 15;
         const startButton = document.getElementById('start');
-
+        const bunsNeededForAnaconda = 15;
+        
         const numColumns = 10;
         const numRows = 10;
 
         const startBox = 0;
         const moveDirection = 'right';
 
-        let segmentEnd = 1.5;
-
         let score = 0;
 
         let moveIntervalId;
 
         const audio = document.getElementById('audio');
+
+        class Game{
+            constructor(score=0, numBuns=0){
+                this._score = score;
+                this._buns = numBuns;
+                this.board = null;
+            }
+
+            set score(newScore){
+                this._score = newScore;
+                const scoreDiv = document.getElementById('score');
+                if(scoreDiv.classList.contains('hidden')){
+                    scoreDiv.classList.remove('hidden');
+                }
+                scoreDiv.textContent =`Score: ${this._score}`;
+            }
+
+            set buns(newNumBuns){
+                this._buns = newNumBuns;
+                const bunDiv = document.getElementById('bunCount');
+                if(bunDiv.classList.contains('hidden')){
+                    bunDiv.classList.remove('hidden');
+                }
+                bunDiv.textContent =`Buns: ${this._buns}`;
+            }
+
+            start(){
+                this.board = new Board(this, numRows, numColumns);
+
+                console.log(this.board.snake)
+                
+                startButton.classList.add('hidden');
+
+                const resetButton = document.getElementById('restart');
+                resetButton.classList.remove('hidden');
+                resetButton.addEventListener('click', () => board.reset());
+
+                this.score = score;
+                this.buns = this.board.snake.bunsEaten;
+
+                moveIntervalId = setInterval(()=>this.board.snake.move(), 300)
+            }
+        }
 
         function getNextCellId(oldPositionId, direction){
             switch(direction){
@@ -140,16 +179,16 @@
         document.onkeydown = function(e){
             switch(e.key){
                 case "ArrowUp":
-                    board.snake.setDirection("up");
+                    game.board.snake.setDirection("up");
                     break;
                 case "ArrowDown":
-                    board.snake.setDirection("down");
+                    game.board.snake.setDirection("down");
                     break;
                 case "ArrowLeft":
-                    board.snake.setDirection("left");
+                    game.board.snake.setDirection("left");
                     break; 
                 case "ArrowRight":
-                    board.snake.setDirection("right");
+                    game.board.snake.setDirection("right");
                     break;
             }
         }
@@ -187,7 +226,8 @@
         }
 
         class Board{
-            constructor(rows, columns){
+            constructor(game, rows, columns){
+                this.game = game;
                 this.numRows = rows;
                 this.numColumns = columns;
 
@@ -224,12 +264,8 @@
                 this.randomAdd('bun');
                 this.randomAdd('mouse');
 
-                score = 1;
-                const scoreDiv = document.getElementById('score');
-                scoreDiv.textContent =`Score: ${score}`;
-
-                const bunDiv = document.getElementById('bunCount');
-                bunDiv.textContent =`Buns: ${this.snake.bunsEaten}`;
+                this.game.score = 1
+                this.game.buns = this.snake.bunsEaten;
 
                 clearInterval(moveIntervalId);
 
@@ -464,9 +500,8 @@
                             break;
                         case 'mouse':
                             console.warn('In mouse switch case');
-                            score+=1;
-                            const scoreDiv = document.getElementById('score');
-                            scoreDiv.textContent =`Score: ${score}`;
+                            score +=1
+                            this.board.game.score = score;
                             shouldRemoveSnakePiece = false;
                             this.board.randomAdd('mouse');
                             if(!this.board.containsItem('bun')){
@@ -476,8 +511,8 @@
                         case 'bun':
                             console.warn('In bun switch case');
                             this.bunsEaten+=1;
-                            const bunDiv = document.getElementById('bunCount');
-                            bunDiv.textContent =`Buns: ${this.bunsEaten}`;
+                            this.board.game.buns = this.bunsEaten;
+                        
                             if(this.bunsEaten%bunsNeededForAnaconda===0){
                                 console.log('toggling anaconda');
                                 this.toggleAnaconda();
@@ -502,25 +537,10 @@
         let snake = null;
         let board;
 
-        
+        let game = new Game();
+
         startButton.addEventListener("click", ()=>{
-            board = new Board(numRows, numColumns);
-
-            startButton.classList.add('hidden');
-
-            const resetButton = document.getElementById('restart');
-            resetButton.classList.remove('hidden');
-            resetButton.addEventListener('click', () => board.reset());
-
-            const scoreDiv = document.getElementById('score');
-            scoreDiv.classList.remove('hidden');
-            scoreDiv.innerText = `Score: ${score}`;
-
-            const bunDiv = document.getElementById('bunCount');
-            bunDiv.classList.remove('hidden');
-            bunDiv.innerText = `Buns: ${board.snake.bunsEaten}`;
-
-            moveIntervalId = setInterval(()=>board.snake.move(), 300)
+            game.start()
         })
         
 
