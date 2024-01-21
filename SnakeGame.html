@@ -50,6 +50,10 @@
             display: none;
             visibility: hidden;
     }
+
+    .anaconda {
+        background-color: yellow;
+    }
 </style>
 <body>
     <audio id="audio">
@@ -68,6 +72,7 @@
     <script>
         let gameInProgress = false;
         let numGamesPlayed = 1;
+        const bunsNeededForAnaconda = 15;
         const startButton = document.getElementById('start');
 
         const numColumns = 10;
@@ -151,22 +156,6 @@
             console.log('Removing location ', cellId)
             document.getElementById(cellId).classList = document.getElementById(cellId).classList[0];
         }
-
-
-        function addBunToBoard(){
-            let randomPosition = Math.floor(Math.random()*numColumns*numRows);
-            console.log('Trying to put bun in position ', randomPosition);
-            let positionDiv = document.getElementById(randomPosition);
-
-            while(positionDiv.classList.contains('snake')){
-                console.log('Position ', randomPosition, ' is occupied by the snake, recalculating...');
-                randomPosition = Math.floor(Math.random()*numColumns*numRows);
-                console.log('Trying to put bun in position ', randomPosition);
-                positionDiv = document.getElementById(randomPosition);
-            }
-
-            positionDiv.classList.add('bun');
-        }
         
         function oppositeWallPosition(cellId, direction){
             switch(direction){
@@ -200,14 +189,13 @@
 
         function resetGame(snake){
             //clear the board of all classes
-            let divsToClear = document.querySelectorAll('.snake, .dead, .bun');
+            let divsToClear = document.querySelectorAll('.snake, .dead, .bun, .anaconda');
             for(let div of divsToClear){
                 div.classList = 'grid-item';
             }
             
             snake.reset();
 
-            // addBunToBoard();
             randomAddItemToBoard('bun');
             score = 1;
             const scoreDiv = document.getElementById('score');
@@ -216,11 +204,10 @@
             const bunDiv = document.getElementById('bunCount');
             bunDiv.textContent =`Buns: ${snake.bunsEaten}`;
             
+            clearInterval(numGamesPlayed);
+            numGamesPlayed+=1;
 
-
-            const newIntervalId = setInterval(()=>snake.move(), 300);
-
-            console.log('New interval id ', newIntervalId)
+            setInterval(()=>snake.move(), 300);
         }
 
         // function playSound(){
@@ -242,21 +229,48 @@
                 this.head = head;
                 this.tail = head;
 
-                this.bunsEaten = 0;
+                this.bunsEaten = 14;
 
                 this.direction = "right";
-                this.isAnaconda = true;
+                this.isAnaconda = false;
+                this.timesAnaconda = 0;
+
+                this.audioIntervalId;
 
                 const position = document.getElementById(this.head.value)
-                position.classList.add("snake")
-
-                console.log('Head during initialization ', this.head)
-                console.log('Tail during initialization ', this.tail)
+                position.classList.add(this.class)
             }
 
-            makeAnaconda(){
-                this.isAnaconda = true;
+            get class() {
+                return this.isAnaconda ? "anaconda" : "snake";
+            }
+
+            toggleAnaconda(){
+                this.isAnaconda = !this.isAnaconda;
                 
+                let classToRemove, classToAdd;
+                
+                [classToRemove, classToAdd] = this.isAnaconda ? ['snake', 'anaconda'] : ['anaconda', 'snake'];
+
+                let snakePiece = this.head;
+                while(snakePiece.next){
+                    const toChange = document.getElementById(snakePiece.value);
+                    toChange.classList.remove(classToRemove);
+                    toChange.classList.add(classToAdd);
+                    snakePiece = snakePiece.next;
+                }
+
+                if(this.isAnaconda){
+                    audio.play();
+                    this.timesAnaconda+=1;
+                    this.audioIntervalId = setInterval(()=>{
+                        audio.pause();
+                        this.toggleAnaconda();   
+                    },15000)
+                }
+                else{
+                    clearInterval(this.audioIntervalId);
+                }
             }
 
             append(value){
@@ -266,7 +280,7 @@
                 prevTail.next = newTail;
                 this.tail = newTail;
                 const newPosition = document.getElementById(value);
-                newPosition.classList.add("snake");
+                newPosition.classList.add(this.class);
             };
             
             prepend(value){
@@ -284,7 +298,7 @@
                 }
 
                 const newPosition = document.getElementById(value);
-                newPosition.classList.add("snake");
+                newPosition.classList.add(this.class);
             };
 
             pop(){
@@ -307,13 +321,13 @@
                 let node = this.head;
                 while(node){
                     let cell = document.getElementById(node.value);
-                    cell.classList.remove('snake');
+                    cell.classList.remove(this.class);
                     cell.classList.add('dead');
                     node = node.next;
                 }
                 clearInterval(numGamesPlayed);
                 numGamesPlayed+=1;
-                // audio.pause()
+                audio.pause()
             }
 
             setDirection(direction){
@@ -333,9 +347,10 @@
 
                 this.direction = 'right';
                 this.bunsEaten = 0;
+                this.isAnaconda = false;
 
                 const position = document.getElementById(this.head.value)
-                position.classList.add("snake")
+                position.classList.add(this.class)
             }
 
             eatSelf(positionId){
@@ -362,7 +377,7 @@
                     newPosition = document.getElementById(newPositionId);
                 }
 
-                if(isOutOfBounds(newPositionId, this.direction) || newPosition.classList.contains('snake')){
+                if(isOutOfBounds(newPositionId, this.direction) || newPosition.classList.contains(this.class)){
                     if(this.isAnaconda){
                         //if it's an anaconda, allow to pass through wall and continue to opposite side
                         if(isOutOfBounds(newPositionId, this.direction)){
@@ -370,12 +385,12 @@
                             newPositionId = oppositeWallPosition(newPositionId, this.direction);
                             console.log('New pos id on opposite wall is ', newPositionId);
                         }
-                        // if(spaceIsOccupied(newPositionId)==='snake'){
-                        //     this.eatSelf(newPositionId);
-                        // }
+                        if(spaceIsOccupied(newPositionId)===this.class){
+                            this.eatSelf(newPositionId);
+                        }
                         removeItemAtPosition(this.pop());
                         this.prepend(newPositionId);
-                        addItemToBoard('snake', newPositionId);
+                        addItemToBoard(this.class, newPositionId);
                     }
                     else{
                         console.warn('Attempting illegal move')
@@ -397,7 +412,6 @@
                             const scoreDiv = document.getElementById('score');
                             scoreDiv.textContent =`Score: ${score}`;
                             shouldRemoveSnakePiece = false;
-                            //    audio.play()
                             randomAddItemToBoard('mouse');
                             break;
                         case 'bun':
@@ -406,6 +420,11 @@
                             const bunDiv = document.getElementById('bunCount');
                             bunDiv.textContent =`Buns: ${this.bunsEaten}`;
                             randomAddItemToBoard('bun');
+                            if(this.bunsEaten%bunsNeededForAnaconda===0){
+                                console.log('toggling anaconda');
+                                this.toggleAnaconda();
+                                
+                            }
                             break;
                     }
 
@@ -417,7 +436,7 @@
                     }
 
                     this.prepend(newPositionId);
-                    addItemToBoard('snake', newPositionId);
+                    addItemToBoard(this.class, newPositionId);
                 }
             }
 
@@ -455,7 +474,6 @@
         bunDiv.classList.remove('hidden');
         bunDiv.innerText = `Buns: ${snake.bunsEaten}`;
 
-        // addBunToBoard();
         randomAddItemToBoard('bun');
         randomAddItemToBoard('mouse');
 
