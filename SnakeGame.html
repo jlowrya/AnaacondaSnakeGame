@@ -6,7 +6,9 @@
 <style>
     body {
         text-align: center;
+        /* background-image: url('Nicki-Minaj-Anaconda.jpg'); */
     }
+
     .grid-container {
         align-items: center;
         display: grid;
@@ -28,6 +30,14 @@
         height: 50px;
         width: 50px;
         justify-this: center;
+    }
+
+    .black-background {
+        background-color: black;
+    }
+
+    .white-background {
+        background-color: white;
     }
 
     .snake {
@@ -52,7 +62,20 @@
     }
 
     .anaconda {
-        background-color: yellow;
+        background: linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 1) 0%,
+        rgba(255, 154, 0, 1) 10%,
+        rgba(208, 222, 33, 1) 20%,
+        rgba(79, 220, 74, 1) 30%,
+        rgba(63, 218, 216, 1) 40%,
+        rgba(47, 201, 226, 1) 50%,
+        rgba(28, 127, 238, 1) 60%,
+        rgba(95, 21, 242, 1) 70%,
+        rgba(186, 12, 248, 1) 80%,
+        rgba(251, 7, 217, 1) 90%,
+        rgba(255, 0, 0, 1) 100%
+    );
     }
 </style>
 <body>
@@ -71,7 +94,7 @@
 
     <script>
         const startButton = document.getElementById('start');
-        const bunsNeededForAnaconda = 15;
+        const bunsNeededForAnaconda = 3;
         
         const numColumns = 10;
         const numRows = 10;
@@ -119,7 +142,7 @@
 
                 const resetButton = document.getElementById('restart');
                 resetButton.classList.remove('hidden');
-                resetButton.addEventListener('click', () => board.reset());
+                resetButton.addEventListener('click', () => this.board.reset());
 
                 this.score = score;
                 this.buns = this.board.snake.bunsEaten;
@@ -197,8 +220,10 @@
             constructor(position, occupant = null){
                 this.position = position;
                 this._occupant = occupant;
+            }
 
-                this.div = document.getElementById(self.position)
+            get div(){
+                return document.getElementById(this.position);
             }
 
             get isOccupied(){
@@ -212,11 +237,26 @@
             set occupant(occupant){
                 this._occupant = occupant;
 
-                let divToSet = document.getElementById(this.position);
-                divToSet.classList = 'grid-item';
+                this.div.classList = this.div.classList.contains('black-background') ? 'grid-item black-background' :  'grid-item ';
 
                 if(occupant!==null) {
-                    divToSet.classList.add(this.occupant);
+                    this.div.classList.add(this.occupant);
+                }
+            }
+
+            toggleColor(){
+                if(this.div.classList.contains('black-background')){
+                    this.div.classList.remove('black-background');
+                }
+                else {
+                    this.div.classList.add('black-background');
+                    if(this.isOccupied){
+                        this.div.classList.remove(this.occupant);
+                        this.div.classList.add(this.occupant);
+
+                        console.warn('THIS SPACE IS OCCUPIED AND THIS IS ITS CLASSLIST ', this.div.classList);
+                    }
+                    
                 }
             }
 
@@ -264,7 +304,7 @@
                 this.randomAdd('bun');
                 this.randomAdd('mouse');
 
-                this.game.score = 1
+                this.game.score = 0
                 this.game.buns = this.snake.bunsEaten;
 
                 clearInterval(moveIntervalId);
@@ -290,6 +330,7 @@
             };
 
             add(thingToAdd, spaceId){
+                console.log('Adding ', thingToAdd, ' at space ', spaceId, '. Here is the space ', this.spaces[spaceId]);
                 this.spaces[spaceId].occupant = thingToAdd;
                 // document.getElementById(spaceId).classList.add(thingToAdd);
             };
@@ -312,6 +353,18 @@
 
             containsItem(itemToCheckFor){
                 return this.spaces.filter((space)=>space.occupant===itemToCheckFor).length>0;
+            }
+
+            toggleSpaceColors(){
+                this.spaces.map((space) => space.toggleColor());
+
+                let gridBody = document.getElementById('grid');
+                if(gridBody.classList.contains('white-background')){
+                    gridBody.classList.remove('white-background');
+                }
+                else{
+                    gridBody.classList.add('white-background');
+                }
             }
         }
 
@@ -337,9 +390,7 @@
                 this.timesAnaconda = 0;
 
                 this.audioIntervalId;
-
-                const position = document.getElementById(this.head.value)
-                position.classList.add(this.class)
+                this.board.add(this.class, this.head.value);
             }
 
             get class() {
@@ -348,18 +399,20 @@
 
             toggleAnaconda(){
                 this.isAnaconda = !this.isAnaconda;
-                
-                let classToAdd = this.isAnaconda ? 'anaconda' : 'snake';
 
                 let snakePiece = this.head;
                 while(snakePiece.next){
-                    this.board.spaces[snakePiece.value].occupant = classToAdd
+                    this.board.spaces[snakePiece.value].occupant = this.class;
                     snakePiece = snakePiece.next;
                 }
 
                 if(this.isAnaconda){
                     audio.play();
                     this.timesAnaconda+=1;
+                    
+                    let body = document.querySelector('body');
+                    body.style.backgroundImage = "url(Nicki-Minaj-Anaconda.jpg)";
+
                     this.audioIntervalId = setInterval(()=>{
                         audio.pause();
                         this.toggleAnaconda();   
@@ -367,7 +420,10 @@
                 }
                 else{
                     clearInterval(this.audioIntervalId);
+                    let body = document.querySelector('body');
+                    body.style.backgroundImage = "";
                 }
+                this.board.toggleSpaceColors();
             }
 
             append(value){
